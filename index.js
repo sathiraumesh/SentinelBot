@@ -1,413 +1,324 @@
-const { Client } = require('discord.js');
-const pinger = require('minecraft-pinger');
-const cron = require('node-cron');
+const { Client } = require("discord.js");
 
-const Query = require('mcquery')
+const cron = require("node-cron");
 
-require('dotenv').config()
+const {
+  assignBasicRole,
+  Server,
+  state,
+  commandarray,
+  triggers,
+  ping,
+  setOnlineTime,
+  GetPlayers,
+  SendToDiscord,
+  query,
+  getTime,
+  splitString,
+  SetState,
+} = require("./helpers");
 
+require("dotenv").config();
 
-var HOST = process.env.MC_SERVER || "play.sentinelcraft.net"
-var PORT = process.env.MC_PORT || 25565
-
-const query = new Query(HOST, PORT, { timeout: 1000 })
 const client = new Client();
 
-const staff = require("./staff.json")
-const rules = require("./rules.json")
-const MESSAGE_CHAR_LIMIT = 2000;
+const staff = require("./staff.json");
+const rules = require("./rules.json");
 
+client.once("ready", () => {
+  console.log("Ready!");
 
-const Server = { OFFLINE: 1, ONLINE: 2, FAILED: 3, STARTUP: 4 }
-Object.freeze(Server)
+  setInterval(function () {
+    client.user
+      .setPresence({
+        game: {
+          name: `${process.env.PREFIX}${
+            triggers[Math.floor(Math.random() * triggers.length)]
+          }`,
+        },
+      })
+      .catch(console.error);
+  }, 600000);
 
-
-
-client.once('ready', () => {
-    console.log('Ready!');
-    setInterval(function () {
-        client.user.setPresence({ game: { name: `${process.env.PREFIX}${triggers[Math.floor(Math.random() * triggers.length)]}` } })
-            .catch(console.error);
-    }, 600000);
-
-    ping().then(s => { SetState.online = s["online"]; setOnlineTime() }).catch(e => { SetState.online = e["online"]; console.error(e) })
-
-
-    cron.schedule("7,17,27,37,47,57 * * * *", async () => {
-        ping().then(s => { SetState.online = s["online"]; setOnlineTime() }).catch(e => { SetState.online = e["online"]; console.error(e) })
-        console.log(`${getTime()} Server is ${(state.online == 2 ? "online" : "offline")}`)
+  ping()
+    .then((s) => {
+      SetState.online = s["online"];
+      setOnlineTime();
+    })
+    .catch((e) => {
+      SetState.online = e["online"];
+      console.error(e);
     });
+
+  cron.schedule("7,17,27,37,47,57 * * * *", async () => {
+    ping()
+      .then((s) => {
+        SetState.online = s["online"];
+        setOnlineTime();
+      })
+      .catch((e) => {
+        SetState.online = e["online"];
+        console.error(e);
+      });
+    console.log(
+      `${getTime()} Server is ${state.online == 2 ? "online" : "offline"}`
+    );
+  });
 });
-
-
-
-
-
-//ADD TRIGGERS FOR THE BOT HERE AS STRINGS, IT WILL REPLY TO THESE WITH THE PLAYERLIST
-const triggers = ['players', 'list', 'online', 'status', 'who']
-
-//ADD ALL OTHER COMMANDS HERE, THEY WILL BE MERGED TO 1 LIST
-const commandarray = [...triggers, 'ip', 'forum', 'donate', 'vote', 'map']
-
-let state = {
-    last_online: [],
-    online: Server.STARTUP
-
-}
-
-
 
 //MAIN LISTENER FOR ALL MESSAGES
-client.on('message', async message => {
-    if (!message.content.startsWith(process.env.PREFIX) || message.author.bot || !process.env.CHANNEL_ID.includes(message.channel.id)) return;
-    const args = message.content.slice(process.env.PREFIX.length).split(/ +/);
-    const command = args.shift().toLowerCase();
-    if (triggers.includes(command)) {
-        message.channel.send(`Checking server for players, please wait...`).then(async m => {
-            await ping().then(s => { SetState.online = s["online"]; setOnlineTime() }).catch(e => { SetState.online = e["online"]; console.error(e) })
-            if (state.online == Server.OFFLINE) return SendToDiscord(m, Server.OFFLINE)
-            GetPlayers().then(res => {
+client.on("message", async (message) => {
+  if (
+    !message.content.startsWith(process.env.PREFIX) ||
+    message.author.bot ||
+    !process.env.CHANNEL_ID.includes(message.channel.id)
+  )
+    return;
+  const args = message.content.slice(process.env.PREFIX.length).split(/ +/);
+  const command = args.shift().toLowerCase();
+  if (triggers.includes(command)) {
+    message.channel
+      .send(`Checking server for players, please wait...`)
+      .then(async (m) => {
+        await ping()
+          .then((s) => {
+            SetState.online = s["online"];
+            setOnlineTime();
+          })
+          .catch((e) => {
+            SetState.online = e["online"];
+            console.error(e);
+          });
+        if (state.online == Server.OFFLINE)
+          return SendToDiscord(m, Server.OFFLINE);
+        GetPlayers()
+          .then((res) => {
+            if (query.outstandingRequests === 0) {
+              query.close();
+            }
 
-                if (query.outstandingRequests === 0) {
-                    query.close()
+            let playerarray = res.players;
+            let memberarray = [];
+            let staffarray = [];
+
+            playerarray.sort((a, b) => a.localeCompare(b));
+
+            playerarray.forEach((el) => {
+              if (staff.hasOwnPropertyCI(el)) {
+                staffarray.push(
+                  `  - [${staff[
+                    Object.keys(staff).find(
+                      (key) => key.toLowerCase() === el.toLowerCase()
+                    )
+                  ].rank.toUpperCase()}] ${el}`
+                );
+              } else {
+                memberarray.push(`  - ${el}`);
+              }
+            });
+
+            let answer = "";
+            m.edit(
+              `**Currently ${res.onlinePlayers}/${
+                res.maxPlayers
+              } Players Online at ${getTime()}**`
+            )
+              .then((m) => {
+                if (staffarray.length == 0 && memberarray.length > 0) {
+                  answer = `\`\`\`ini\n[MEMBERS]\n\n${memberarray.join(
+                    "\t\n"
+                  )}\n\n\`\`\``;
+                } else if (memberarray.length == 0 && staffarray.length > 0) {
+                  answer = `\`\`\`ini\n[STAFF]\n\n${staffarray.join(
+                    "\t\n"
+                  )}\`\`\``;
+                } else if (memberarray.length == 0 && staffarray.length == 0) {
+                  answer = `\`\`\`ini\nNoone is currently online, you can change this by joining right now!!\`\`\``;
+                } else {
+                  answer = `\`\`\`ini\n[MEMBERS]\n\n${memberarray.join(
+                    "\t\n"
+                  )}\n\n[STAFF]\n\n${staffarray.join("\t\n")}\`\`\``;
                 }
 
-                let playerarray = res.players
-                let memberarray = [];
-                let staffarray = [];
-
-                playerarray.sort((a, b) => a.localeCompare(b));
-
-                playerarray.forEach(el => {
-                    if (staff.hasOwnPropertyCI(el)) {
-                        staffarray.push(`  - [${staff[Object.keys(staff).find(key => key.toLowerCase() === el.toLowerCase())].rank.toUpperCase()}] ${el}`);
-                    } else {
-                        memberarray.push(`  - ${el}`);
-                    }
+                splitString(answer).forEach((el) => {
+                  m.channel.send(el).catch(console.error);
                 });
-
-                let answer = "";
-                m.edit(`**Currently ${res.onlinePlayers}/${res.maxPlayers} Players Online at ${getTime()}**`).then(m => {
-                    if (staffarray.length == 0 && memberarray.length > 0) {
-                        answer = `\`\`\`ini\n[MEMBERS]\n\n${memberarray.join('\t\n')}\n\n\`\`\``;
-
-                    } else if (memberarray.length == 0 && staffarray.length > 0) {
-                        answer = `\`\`\`ini\n[STAFF]\n\n${staffarray.join('\t\n')}\`\`\``;
-
-                    } else if (memberarray.length == 0 && staffarray.length == 0) {
-                        answer = `\`\`\`ini\nNoone is currently online, you can change this by joining right now!!\`\`\``;
-
-                    } else {
-                        answer = `\`\`\`ini\n[MEMBERS]\n\n${memberarray.join('\t\n')}\n\n[STAFF]\n\n${staffarray.join('\t\n')}\`\`\``;
-                    }
-
-                    splitString(answer).forEach(el => {
-                        m.channel.send(el).catch(console.error)
-                    })
-                }
-                ).catch(e => { (state.online == Server.OFFLINE) ? SendToDiscord(m, Server.OFFLINE) : SendToDiscord(m, Server.FAILED), console.error(e) });
-            }).catch(e => { (state.online == Server.OFFLINE) ? SendToDiscord(m, Server.OFFLINE) : SendToDiscord(m, Server.FAILED), console.error(e) });
-        })
-    } else if (command == "help") {
-
-        message.channel.send({
-            embed: {
-                title: "**HELP**",
-                description: "This bot was custom made for Sentinelcraft",
-                fields: [
-                    {
-                        name: '**COMMANDS**',
-                        value: commandarray.map(i => `${process.env.PREFIX}` + i).join("\n")
-                    },
-                    {
-                        name: '**IP**',
-                        value: process.env.IP
-                    },
-                    {
-                        name: '**WEBSITE**',
-                        value: "https://www.sentinelcraft.net"
-                    },
-                    {
-                        name: '**FORUM**',
-                        value: process.env.FORUM
-                    }
-                ]
-            }
-        }).catch(console.error);
-    } else if (command == "ip") {
-        message.channel.send({
-            embed: {
-                title: "**SERVER IP**",
-                description: process.env.IP
-            }
-        }).catch(console.error);
-    } else if (command == "donate") {
-        message.channel.send({
-            embed: {
-                title: "**DONATE SITE**",
-                description: process.env.DONATE
-            }
-        }).catch(console.error);
-    } else if (command == "forum") {
-        message.channel.send({
-            embed: {
-                title: "**FORUM**",
-                description: process.env.FORUM
-            }
-        }).catch(console.error);
-    } else if (command == "map") {
-        message.channel.send({
-            embed: {
-                title: "**MAP**",
-                description: process.env.MAP
-            }
-        }).catch(console.error);
-    } else if (command == "vote") {
-        message.channel.send({
-            embed: {
-                title: "**VOTE SITES**",
-                description: process.env.VOTE
-            }
-        }).catch(console.error);
-    } else if (command == "rules") {
-        message.channel.send({
-            embed: {
-                title: "**RULES**",
-                fields: [
-                    {
-                        name: '**DISCORD RULES**',
-                        value: `\`\`\`${rules.discord.map(i => '-' + i).join("\n\n")}\`\`\``
-                    },
-                    {
-                        name: '**SERVER RULES**',
-                        value: process.env.RULES
-                    }
-                ]
-            }
-        }).catch(console.error);
-    }
-    else if (command == "music") {
-        message.channel.send({
-            embed: {
-                title: "**MUSIC COMMANDS**",
-                fields: [
-                    {
-                        name: `**>play**`,
-                        value: `\`\`\`Plays a song with the given name or url.\`\`\``
-                    },
-                    {
-                        name: `**>queue**`,
-                        value: `\`\`\`View the queue. To view different pages, type the command with the specified page number after it (>queue 2).\`\`\``
-                    },
-                    {
-                        name: `**>lyrics**`,
-                        value: `\`\`\`Ever wondered what the songtext is? Or if you want to sing along like Joel, use this to get the text of the requested song.\`\`\``
-                    },
-                    {
-                        name: `**>search**`,
-                        value: `\`\`\`Search for a specific song, found one you like? reply with the number of the track to play it.\`\`\``
-                    },
-                    {
-                        name: `**>np**`,
-                        value: `\`\`\`Lists the current song playing.\`\`\``
-                    },
-                    {
-                        name: `**>loop**`,
-                        value: `\`\`\`Loop the currently playing song.\`\`\``
-                    },
-                ]
-            }
-        }).catch(console.error);
-    }
+              })
+              .catch((e) => {
+                state.online == Server.OFFLINE
+                  ? SendToDiscord(m, Server.OFFLINE)
+                  : SendToDiscord(m, Server.FAILED),
+                  console.error(e);
+              });
+          })
+          .catch((e) => {
+            state.online == Server.OFFLINE
+              ? SendToDiscord(m, Server.OFFLINE)
+              : SendToDiscord(m, Server.FAILED),
+              console.error(e);
+          });
+      });
+  } else if (command == "help") {
+    message.channel
+      .send({
+        embed: {
+          title: "**HELP**",
+          description: "This bot was custom made for Sentinelcraft",
+          fields: [
+            {
+              name: "**COMMANDS**",
+              value: commandarray
+                .map((i) => `${process.env.PREFIX}` + i)
+                .join("\n"),
+            },
+            {
+              name: "**IP**",
+              value: process.env.IP,
+            },
+            {
+              name: "**WEBSITE**",
+              value: "https://www.sentinelcraft.net",
+            },
+            {
+              name: "**FORUM**",
+              value: process.env.FORUM,
+            },
+          ],
+        },
+      })
+      .catch(console.error);
+  } else if (command == "ip") {
+    message.channel
+      .send({
+        embed: {
+          title: "**SERVER IP**",
+          description: process.env.IP,
+        },
+      })
+      .catch(console.error);
+  } else if (command == "donate") {
+    message.channel
+      .send({
+        embed: {
+          title: "**DONATE SITE**",
+          description: process.env.DONATE,
+        },
+      })
+      .catch(console.error);
+  } else if (command == "forum") {
+    message.channel
+      .send({
+        embed: {
+          title: "**FORUM**",
+          description: process.env.FORUM,
+        },
+      })
+      .catch(console.error);
+  } else if (command == "map") {
+    message.channel
+      .send({
+        embed: {
+          title: "**MAP**",
+          description: process.env.MAP,
+        },
+      })
+      .catch(console.error);
+  } else if (command == "vote") {
+    message.channel
+      .send({
+        embed: {
+          title: "**VOTE SITES**",
+          description: process.env.VOTE,
+        },
+      })
+      .catch(console.error);
+  } else if (command == "rules") {
+    message.channel
+      .send({
+        embed: {
+          title: "**RULES**",
+          fields: [
+            {
+              name: "**DISCORD RULES**",
+              value: `\`\`\`${rules.discord
+                .map((i) => "-" + i)
+                .join("\n\n")}\`\`\``,
+            },
+            {
+              name: "**SERVER RULES**",
+              value: process.env.RULES,
+            },
+          ],
+        },
+      })
+      .catch(console.error);
+  } else if (command == "music") {
+    message.channel
+      .send({
+        embed: {
+          title: "**MUSIC COMMANDS**",
+          fields: [
+            {
+              name: `**>play**`,
+              value: `\`\`\`Plays a song with the given name or url.\`\`\``,
+            },
+            {
+              name: `**>queue**`,
+              value: `\`\`\`View the queue. To view different pages, type the command with the specified page number after it (>queue 2).\`\`\``,
+            },
+            {
+              name: `**>lyrics**`,
+              value: `\`\`\`Ever wondered what the songtext is? Or if you want to sing along like Joel, use this to get the text of the requested song.\`\`\``,
+            },
+            {
+              name: `**>search**`,
+              value: `\`\`\`Search for a specific song, found one you like? reply with the number of the track to play it.\`\`\``,
+            },
+            {
+              name: `**>np**`,
+              value: `\`\`\`Lists the current song playing.\`\`\``,
+            },
+            {
+              name: `**>loop**`,
+              value: `\`\`\`Loop the currently playing song.\`\`\``,
+            },
+          ],
+        },
+      })
+      .catch(console.error);
+  }
 });
 
-client.on("guildMemberAdd", async member => {
-
-    const welcomechannel = member.guild.channels.find(c => c.id == process.env.WELCOME_CHANNEL)
-    if (!welcomechannel) return;
-    welcomechannel.send(`Hey ${member}, welcome to **SentinelCraft Chat!**`)
-})
-
-/**
- * Description (Extension of Date to calculate difference between 2 dates in minutes).
- * @global
- * @augments Date
- * @param {Date} date1 First date
- * @param {Date} date2 Second date
- * @return {Number} 
- */
-Date.minutesBetween = function (date1, date2) {
-    return Math.abs(new Date(date1) - new Date(date2)) / 1000 / 60
-}
-
-/**
- * Description (Extension of Date to return full minutestring).
- * @global
- * @augments Date
- * @param {Date} dt First date
- * @return {Number} 
- */
-Date.getFullMinutes = function (dt) {
-    return (dt.getMinutes() < 10 ? '0' : '') + dt.getMinutes();
-}
-
-/**
- * Description (Searches for a case insensitive key inside the object).
- * @global
- * @augments Object
- * @param {String} prop String to look for in the object
- * @return {Object} 
- */
-Object.prototype.hasOwnPropertyCI = function (prop) {
-    return Object.keys(this)
-        .filter(function (v) {
-            return v.toLowerCase() === prop.toLowerCase();
-        }).length > 0;
-};
-
-/**
- * Description (function to split large strings into an array of strings).
- * @global
- * @param {String} string the original string
- * @param {String} prepend every string will be prepended with this, default value
- * @param {String} append every string will be appended with this, default value
- * @return {Array} 
- */
-const splitString = (string, prepend = `\`\`\`ini\n`, append = `\`\`\``) => {
-    if (string.length <= MESSAGE_CHAR_LIMIT) {
-        return [string];
-    }
-    const splitIndex = string.lastIndexOf('\n', MESSAGE_CHAR_LIMIT - prepend.length - append.length);
-    const sliceEnd = splitIndex > 0 ? splitIndex : MESSAGE_CHAR_LIMIT - prepend.length - append.length;
-    const rest = splitString(string.slice(sliceEnd), prepend, append);
-    return [`${string.slice(0, sliceEnd)}${append}`, `${prepend}${rest[0]}`, ...rest.slice(1)];
-};
-
-Array.prototype.last = function () {
-    return this[this.length - 1];
-}
-
-
-/**
- * Description (function that will log a message to discord).
- * @global 
- * @param {Object} msg Message object to edit
- * @param {Enum} status status of the server
- */
-const SendToDiscord = (msg, status) => {
-    switch (status) {
-        case Server.OFFLINE:
-            if (state.last_online.last()) {
-                let diff = Math.round(Date.minutesBetween(state.last_online.last(), new Date()));
-                msg.edit(`Server is unavailable! Last online **${diff >= 60 ? Math.round(diff / 60) + " hours" : diff + " minutes"}** ago`).catch(console.error);
-            } else {
-                msg.edit(`Server is unavailable! Please try again later!\nIf Senior Admins have not been contacted you can ping them, please only do this once so they are not spammed!`).catch(console.error);
-            }
-            break;
-        case Server.FAILED:
-            msg.edit(`Failed getting the list of Members, please try again later!`).catch(console.error);
-            break;
-    }
-}
-
-
-/**
- * Description (function that pings the server to see if it's online).
- * @global 
- * @returns {Promise}
- */
-const ping = async () => {
-    return new Promise((resolve, reject) => {
-        pinger.ping('play.sentinelcraft.net', 25565, (error, result) => {
-            if (error) return reject({ status: error, online: Server.OFFLINE })
-            return resolve({ status: result, online: Server.ONLINE })
-        })
-
-    });
-}
-
-//EVENT HANDLER WHEN SERVERSTATE CHANGES
-var SetState = new Proxy(state, {
-    set: function (target, key, value) {
-        if (target[key] == value) return;
-        console.log(`STATUS went from ${Object.keys(Server).find(k => Server[k] === target[key])} to ${Object.keys(Server).find(k => Server[k] === value)}`)
-        if (key == "online" && value == 1) {
-            alertStaff(`Server went offline at ${getTime()}, this message was sent to all online and idle staff`)
-        }
-        target[key] = value;
-        return true;
-    }
-});
-
-
-/**
- * Description (function that will look for all online and idle staff in discord and alert them witht he message).
- * @global 
- * @param {String} message Message that will be send to all online/idle staff
- */
-const alertStaff = (message) => {
-    console.log("ALERTSTAFF")
-    let Sentinel = client.guilds.find(guild => guild.id == process.env.ID)
-    if (!Sentinel) return;
-    //SENIOR ADMINS (PINK), SENIOR ADMINS(PURPLE), ADMIN(RED)
-    //"243115016864268288", "243053541328027648", "243053597561061378"
-    let SA = Sentinel.members.filter(m => m.roles.some(r => ["243115016864268288", "243053541328027648", "243053597561061378"].includes(r.id)))
-    if (!SA) return;
-    let onlinestaff = [...new Set(SA.filter(m => m.presence.status == "online" || m.presence.status == "idle"))]
-    onlinestaff.forEach(element => {
-        element[1].send(`**${message}**\n ${onlinestaff.map(el => el[1]).join("\n")}`).catch(e => console.error);
-    });
-}
-/**
- * Description (function that format's the time to a readable string).
- * @global
- * @return {String} 
- */
-const getTime = () => {
-    let now = new Date();
-    return `${now.toLocaleDateString()} ${now.getHours()}:${Date.getFullMinutes(now)}`;
-}
-
-
-/**
- * Description (function that saves the last online time into an array and checks if not more than 2 dates are saved).
- * @global 
- */
-const setOnlineTime = () => {
-    state.last_online.push(new Date())
-    if (state.last_online.length >= 2) {
-        state.last_online.shift();
-    }
-}
-
-/**
- * Description (function that queries the server and returns a custom made object).
- * @global
- * @return {Object} 
- */
-const GetPlayers = () => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            query.connect(function (err) {
-                query.full_stat((err, stats) => {
-                    (stats != null || stats != undefined) ?
-                        resolve({
-                            players: stats.player_,
-                            onlinePlayers: stats.numplayers,
-                            maxPlayers: stats.maxplayers
-                        }) : SetState.online = Server.OFFLINE; reject({ message: "Server is offline", error: err })
-                })
-            })
-        } catch (error) {
-            reject(error)
-        }
+client.on("guildMemberAdd", async (member) => {
+  const welcomechannel = member.guild.channels.find(
+    (c) => c.id == process.env.WELCOME_CHANNEL
+  );
+  if (!welcomechannel) return;
+  welcomechannel
+    .send({
+      embed: {
+        color: 5693462,
+        title: `Welcome to the server **${member.user.username}**`,
+        thumbnail: {
+          url: "https://i.imgur.com/MEhv2WJ.gif",
+        },
+        fields: [
+          {
+            name: "Info",
+            value: `Use ${process.env.PREFIX}help to see my commands`,
+          },
+        ],
+        footer: {
+          icon_url: member.user.avatarURL,
+          text: `Automatic message on new guildmember`,
+        },
+      },
     })
-}
-
-
+    .catch(console.error);
+  assignBasicRole(member);
+});
 
 client.on("error", (e) => console.error(e));
 client.on("warn", (e) => console.warn(e));
 
 client.login(process.env.TOKEN);
-

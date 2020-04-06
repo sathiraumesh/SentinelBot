@@ -1,59 +1,82 @@
 {
-    "migas94": {
-        "rank": "Owner"
-    },
-    "Fjerreiro": {
-        "rank": "SA"
-    },
-    "PaulinaCarrot": {
-        "rank": "SA"
-    },
-    "Richgotya": {
-        "rank": "SA"
-    },
-    "ninja5132": {
-        "rank": "SA"
-    },
-    "Toxic_Demon93": {
-        "rank": "SA"
-    },
-    "AMNOTBANANAAMA": {
-        "rank": "Admin"
-    },
-    "BrendaxNL": {
-        "rank": "Admin"
-    },
-    "HvPanda": {
-        "rank": "Admin"
-    },
-    "Zarosi": {
-        "rank": "Admin"
-    },
-    "Annu_Mannu67": {
-        "rank": "Mod"
-    },
-    "AceAlmighty16": {
-        "rank": "Mod"
-    },
-    "Creepy_Crawlers": {
-        "rank": "Mod"
-    },
-    "ElizaPalooza": {
-        "rank": "Mod"
-    },
-    "Jeffeatspie": {
-        "rank": "Mod"
-    },
-    "KibikiKibble": {
-        "rank": "Mod"
-    },
-    "Oplegoman": {
-        "rank": "Mod"
-    },
-    "RogueFriday": {
-        "rank": "Mod"
-    },
-    "Fedgar_Lurch":{
-        "rank" : "Founder"
-    }
+  "migas94": {
+    "rank": "Owner",
+    "id": "243110195704758273"
+  },
+  "Fjerreiro": {
+    "rank": "SA",
+    "id": "243919331883352077"
+  },
+  "PaulinaCarrot": {
+    "rank": "SA",
+    "id": "215430397855531018"
+  },
+  "Richgotya": {
+    "rank": "SA",
+    "id": ""
+  },
+  "ninja5132": {
+    "rank": "SA",
+    "id": "560839542811131905"
+  },
+  "Toxic_Demon93": {
+    "rank": "SA",
+    "id": "121419228959080450"
+  },
+  "AMNOTBANANAAMA": {
+    "rank": "Admin",
+    "id": "429425851835088897"
+  },
+  "BrendaxNL": {
+    "rank": "Admin",
+    "id": "216926188906610688"
+  },
+  "HvPanda": {
+    "rank": "Admin",
+    "id": ""
+  },
+  "Zarosi": {
+    "rank": "Admin",
+    "id": "243097126635044864"
+  },
+  "Annu_Mannu67": {
+    "rank": "Mod",
+    "id": ""
+  },
+  "AceAlmighty16": {
+    "rank": "Mod",
+    "id": ""
+  },
+  "Creepy_Crawlers": {
+    "rank": "Mod",
+    "id": ""
+  },
+  "ElizaPalooza": {
+    "rank": "Mod",
+    "id": ""
+  },
+  "Jeffeatspie": {
+    "rank": "Mod",
+    "id": ""
+  },
+  "KibikiKibble": {
+    "rank": "Mod",
+    "id": ""
+  },
+  "Oplegoman": {
+    "rank": "Mod",
+    "id": ""
+  },
+  "RogueFriday": {
+    "rank": "Mod",
+    "id": ""
+  },
+  "Fedgar_Lurch": {
+    "rank": "Founder",
+    "id": ""
+  },
+  "Demoncrusher": {
+    "rank": "Mod",
+    "id": ""
+  }
 }
