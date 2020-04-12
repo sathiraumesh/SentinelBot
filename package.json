@@ -10,7 +10,11 @@
     "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["Discord", "Bot", "Minecraft"],
+  "keywords": [
+    "Discord",
+    "Bot",
+    "Minecraft"
+  ],
   "author": "Eagler1997",
   "license": "ISC",
   "dependencies": {
