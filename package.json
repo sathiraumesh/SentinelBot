@@ -1,0 +1,28 @@
+{
+  "name": "sentinelbot",
+  "version": "1.0.0",
+  "description": "A discord bot that pings the server, and provides more info",
+  "main": "index.js",
+  "engines": {
+    "node": ">=8.0.0"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Discord",
+    "Bot",
+    "Minecraft"
+  ],
+  "author": "Eagler1997",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^11.5.1",
+    "dotenv": "^8.2.0",
+    "enmap": "^5.2.4",
+    "mcquery": "^1.0.1",
+    "minecraft-pinger": "^1.0.3",
+    "node-cron": "^2.0.3"
+  }
+}
