@@ -1,27 +1,46 @@
+if (Number(process.version.slice(1).split(".")[0]) < 8)
+  throw new Error(
+    "Node 8.0.0 or higher is required. Update Node on your system."
+  );
+
 const { Client } = require("discord.js");
+const Enmap = require("enmap");
 
 const cron = require("node-cron");
 
 const pinger = require("minecraft-pinger");
 const Query = require("mcquery");
 
+const fs = require("fs");
+
 require("dotenv").config();
 
 var HOST = process.env.MC_SERVER || "play.sentinelcraft.net";
 var PORT = process.env.MC_PORT || 25565;
 
-const query = new Query(HOST, PORT, { timeout: 10000 });
+const query = new Query(HOST, PORT, { timeout: 30000 });
 const Server = { OFFLINE: 1, ONLINE: 2, FAILED: 3, STARTUP: 4 };
 Object.freeze(Server);
 const MESSAGE_CHAR_LIMIT = 2000;
 
 //DISCORD CLIENT
 const client = new Client();
-
+client.settings = new Enmap();
 //OWN FILES
 const roles = require("./roles.json");
 const staff = require("./staff.json");
 const rules = require("./rules.json");
+
+client.settings.disableping = false;
+//ALL ADMINS OF THE BOT, THESE PEOPLE HAVE FULL ACCESS TO ALL COMMANDS
+client.admins = [
+  staff.AMNOTBANANAAMA.id,
+  staff.Toxic_Demon93.id,
+  staff.PaulinaCarrot.id,
+  staff.ninja5132.id,
+  staff.Fjerreiro.id,
+  staff.migas94.id,
+];
 
 client.once("ready", () => {
   console.log("Ready!");
@@ -72,19 +91,23 @@ client.on("message", async (message) => {
     !process.env.CHANNEL_ID.includes(message.channel.id)
   )
     return;
-  const args = message.content.slice(process.env.PREFIX.length).split(/ +/);
-  const command = args.shift().toLowerCase();
+  const content = message.content.slice(process.env.PREFIX.length).split(/ +/);
+  console.log(content);
+  const command = content.shift().toLowerCase();
+
+  const args = content;
+
   if (triggers.includes(command)) {
     message.channel
       .send(`Checking server for players, please wait...`)
       .then(async (m) => {
         await ping()
           .then((s) => {
-            SetState.online = s["online"];
+            state.online = s["online"];
             setOnlineTime();
           })
           .catch((e) => {
-            SetState.online = e["online"];
+            state.online = e["online"];
             console.error(e);
           });
         if (state.online == Server.OFFLINE)
@@ -230,6 +253,15 @@ client.on("message", async (message) => {
         },
       })
       .catch(console.error);
+  } else if (command == "appeal") {
+    message.channel
+      .send({
+        embed: {
+          title: "**BAN APPEAL**",
+          description: `- Follow this format to appeal:\n ${process.env.FORMAT_APPEAL}\n\n- And post it here:\n ${process.env.APPEAL}`,
+        },
+      })
+      .catch(console.error);
   } else if (command == "rules") {
     message.channel
       .send({
@@ -284,8 +316,162 @@ client.on("message", async (message) => {
         },
       })
       .catch(console.error);
+  } else if (command == "userinfo") {
+    let user = message.mentions.members.first();
+    if (!message.mentions.members.first()) {
+      user = message.guild.members.find(
+        (u) =>
+          u.displayName == args.join(" ") ||
+          u.tag == args.join(" ") ||
+          u.id == args
+      );
+    }
+    if (!user) return message.channel.send("Could not find this user");
+    var nickname = user.nickname;
+    var joined = user.joinedAt.toString().substring(4, 15);
+    var created = user.user.createdAt.toString().substring(4, 15);
+
+    const joineddays = getDays(Date.now(), new Date(user.joinedAt));
+    const createddays = getDays(Date.now(), new Date(user.user.createdAt));
+
+    var roles = user.roles
+      .filter((role) => role.id !== message.channel.guild.id)
+      .map((r) => `${r.name}`)
+      .join(` - `);
+    if (!roles) {
+      roles = "I have no roles";
+    }
+    if (!nickname) {
+      nickname = user.displayName;
+    }
+
+    const sortedmembers = message.guild.members.sort(
+      (a, b) => a.joinedAt - b.joinedAt
+    );
+
+    const position = sortedmembers
+      .map(function (obj) {
+        return obj.id;
+      })
+      .indexOf(user.id);
+
+    message.channel.send({
+      embed: {
+        title: `${user.displayName}#${user.user.discriminator}`,
+        description: `Chilling in ${user.presence.status} status`,
+        color: 13632027,
+        thumbnail: {
+          url: user.user.avatarURL,
+        },
+        footer: {
+          icon_url: client.user.avatarURL,
+          text: `#${position + 1} | User ID ${user.id}`,
+        },
+        fields: [
+          {
+            name: "**Nickname**",
+            value: nickname,
+            inline: false,
+          },
+          {
+            name: "**Created Discord account on**",
+            value: `${created} \n(${createddays} days ago)`,
+            inline: true,
+          },
+          {
+            name: "**Joined Sentinelcraft discord on**",
+            value: `${joined} \n(${joineddays} days ago)`,
+            inline: true,
+          },
+
+          {
+            name: "**Roles**",
+            value: roles,
+            inline: false,
+          },
+        ],
+      },
+    });
+  } else if (command === "ping" && client.admins.includes(message.author.id)) {
+    if (args.length === 0)
+      return message.channel.send({
+        embed: {
+          title: `**PING**`,
+          description: `Pinging of staff is currently ${
+            client.settings.disableping ? "**off**" : "**on**"
+          }`,
+          color: 3066993,
+        },
+      });
+    const suffix = args.toString() === "off";
+    //changing the setting
+    client.settings.disableping = suffix ? true : false;
+
+    message.channel.send({
+      embed: {
+        title: `**PING**`,
+        description: `Changed pinging of staff to ${
+          client.settings.disableping ? "**off**" : "**on**"
+        } do **!ping ${suffix ? "on" : "off"}** to ${
+          suffix ? "enable" : "disable"
+        } it`,
+        color: 3066993,
+      },
+    });
+  } else if (
+    command === "fakejoin" &&
+    client.admins.includes(message.author.id)
+  ) {
+    client.emit(
+      "guildMemberAdd",
+      message.member || message.guild.fetchMember(message.author)
+    );
+    message.channel.send("I added a fake join");
+  } else if (command === "invite") {
+    message.channel
+      .createInvite({
+        maxAge: 3600,
+        maxUses: 5,
+        unique: true,
+        reason: `Invite requested by ${message.author}`,
+      })
+      .then((invite) => {
+        message.channel.send({
+          embed: {
+            title: `**Invite**`,
+            description: `Succesfully created a temporary invite valid for 1 hour`,
+            color: 3066993,
+            fields: [
+              {
+                name: "**URL**",
+                value: invite.url,
+                inline: false,
+              },
+            ],
+          },
+        });
+      })
+      .catch(console.error);
+  } else if (
+    command === "promote" &&
+    client.admins.includes(message.author.id)
+  ) {
+    if (args.length === 2) {
+      promote(args[0], args[1], message);
+    } else {
+      return message.channel.send("invalid amount of arguments");
+    }
   }
 });
+
+const getDays = (dt1, dt2) => {
+  var start = new Date(dt2);
+  var end = new Date(dt1);
+  var days = (end - start) / 1000 / 60 / 60 / 24;
+  days =
+    days - (end.getTimezoneOffset() - start.getTimezoneOffset()) / (60 * 24);
+  return Math.floor(days);
+};
 
 client.on("guildMemberAdd", async (member) => {
   const welcomechannel = member.guild.channels.find(
@@ -301,6 +487,12 @@ client.on("guildMemberAdd", async (member) => {
           url: "https://i.imgur.com/MEhv2WJ.gif",
         },
         fields: [
+          {
+            name: "Membercount",
+            value: `${member.guild.name} has ${
+              member.guild.members.filter((member) => !member.user.bot).size
+            } members`,
+          },
           {
             name: "Info",
             value: `Use ${process.env.PREFIX}help to see my commands`,
@@ -329,10 +521,10 @@ const assignBasicRole = (member) => {
     .catch(() => console.error(`Failed to assign role : ${roles.Member.id}`));
 };
 
-//ADD TRIGGERS FOR THE BOT HERE AS STRINGS, IT WILL REPLY TO THESE WITH THE PLAYERLIST
+//ADD TRIGGERS FOR THE BOT HERE AS STRINGS, IT WILL REPLY TO THESE WITH THE PLAYERLIST COMMAND
 const triggers = ["players", "list", "online", "status", "who"];
 
-//ADD ALL OTHER COMMANDS HERE, THEY WILL BE MERGED TO 1 LIST
+//ADD ALL OTHER COMMANDS HERE, THEY WILL BE MERGED TO 1 LIST AND APPEAR IN THE HELP
 const commandarray = [
   ...triggers,
   "ip",
@@ -341,6 +533,9 @@ const commandarray = [
   "vote",
   "map",
   "music",
+  "appeal",
+  "userinfo",
+  "invite",
 ];
 
 /**
@@ -475,6 +670,25 @@ const ping = async () => {
   });
 };
 
+const promote = (target, role, msg) => {
+  if (staff[target]) {
+    staff[target].rank = role;
+  } else {
+    staff[target] = { rank: role };
+  }
+
+  saveStaff();
+  msg.channel.send(`Updated ${target}'s role to ${role} in the JSON.`);
+};
+
+const saveStaff = () => {
+  let data = JSON.stringify(staff, null, 2);
+  fs.writeFile("staff.json", data, (err) => {
+    if (err) throw err;
+    console.log("Data written to file");
+  });
+};
+
 /**
  * Description (function that will look for all online and idle staff in discord and alert them witht he message).
  * @global
@@ -482,19 +696,13 @@ const ping = async () => {
  */
 const alertStaff = (message) => {
   console.log("ALERTSTAFF");
+  if (client.settings.disableping)
+    return console.info(
+      `DID NOT ALERT STAFF AT ${new Date()} because pings were turned off`
+    );
   let Sentinel = client.guilds.find((guild) => guild.id == process.env.ID);
   if (!Sentinel) return console.error("Did not find any guilds");
-  let SA = Sentinel.members.filter((m) =>
-    [
-      staff.AMNOTBANANAAMA.id,
-      staff.Toxic_Demon93.id,
-      staff.PaulinaCarrot.id,
-      staff.ninja5132.id,
-      staff.Fjerreiro.id,
-      staff.migas94.id,
-      //ADD ID TO THE STAFF.JSON FILE TO REACH THEM, otherwise this will throw errors
-    ].includes(m.id)
-  );
+  let SA = Sentinel.members.filter((m) => client.admins.includes(m.id));
   if (!SA) return console.error("Did not find any staff");
   let onlinestaff = [
     ...new Set(
@@ -549,6 +757,9 @@ const GetPlayers = () => {
                 maxPlayers: stats.maxplayers,
               })
             : (SetState.online = Server.OFFLINE);
+          if (err != null) {
+            console.log(err);
+          }
           reject({ message: "Server is offline", error: err });
         });
       });

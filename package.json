@@ -20,6 +20,7 @@
   "dependencies": {
     "discord.js": "^11.5.1",
     "dotenv": "^8.2.0",
+    "enmap": "^5.2.4",
     "mcquery": "^1.0.1",
     "minecraft-pinger": "^1.0.3",
     "node-cron": "^2.0.3"

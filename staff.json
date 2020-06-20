@@ -48,7 +48,7 @@
     "id": ""
   },
   "Creepy_Crawlers": {
-    "rank": "Mod",
+    "rank": "Admin",
     "id": ""
   },
   "ElizaPalooza": {
@@ -78,5 +78,20 @@
   "Demoncrusher": {
     "rank": "Mod",
     "id": ""
+  },
+  "Silver_Dragoon1": {
+    "rank": "Mod",
+    "id": ""
+  },
+  "charactername111": {
+    "rank": "Mod",
+    "id": ""
+  },
+  "bugsy12": {
+    "rank": "Mod",
+    "id": ""
+  },
+  "Eagler1997": {
+    "rank": "SA"
   }
 }
