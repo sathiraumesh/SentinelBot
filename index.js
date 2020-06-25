@@ -92,20 +92,24 @@ const checkForContent = async (message) => {
   const test = group.filter((value) => content.includes(value));
 
   if (test.length >= 3) {
-    const channel = await message.author.createDM();
+    try {
+      const channel = await message.author.createDM();
 
-    channel
-      .send({
-        embed: {
-          title: `**SERVER UPDATE TO 1.16**`,
-          description: `There is currently no estimated release date for 1.16.\nIn order to update, we have to wait for several factors outside of our control, such as updates to plugins and bug fixes. \n\n**The most important thing for us is that the server updates safely and smoothly.**\n\n Until/if we can guarantee that, we will wait to update. Please be patient, \nsupporting new versions is a lot of work.`,
-          color: 3066993,
-          image: {
-            url: "https://i.imgur.com/ErkdrOQ.png",
+      channel
+        .send({
+          embed: {
+            title: `**SERVER UPDATE TO 1.16**`,
+            description: `There is currently no estimated release date for 1.16.\nIn order to update, we have to wait for several factors outside of our control, such as updates to plugins and bug fixes. \n\n**The most important thing for us is that the server updates safely and smoothly.**\n\n Until/if we can guarantee that, we will wait to update. Please be patient, \nsupporting new versions is a lot of work.`,
+            color: 3066993,
+            image: {
+              url: "https://i.imgur.com/ErkdrOQ.png",
+            },
           },
-        },
-      })
-      .catch(console.error);
+        })
+        .catch(console.error);
+    } catch (error) {
+      console.error(error);
+    }
   }
 };
 
