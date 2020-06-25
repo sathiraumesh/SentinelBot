@@ -40,6 +40,7 @@ client.admins = [
   staff.ninja5132.id,
   staff.Fjerreiro.id,
   staff.migas94.id,
+  staff.BrendaxNL.id,
 ];
 
 client.once("ready", () => {
@@ -91,20 +92,24 @@ const checkForContent = async (message) => {
   const test = group.filter((value) => content.includes(value));
 
   if (test.length >= 3) {
-    const channel = await message.author.createDM();
+    try {
+      const channel = await message.author.createDM();
 
-    channel
-      .send({
-        embed: {
-          title: `**SERVER UPDATE TO 1.16**`,
-          description: `There is currently no estimated release date for 1.16.\nIn order to update, we have to wait for several factors outside of our control, such as updates to plugins and bug fixes. \n\n**The most important thing for us is that the server updates safely and smoothly.**\n\n Until/if we can guarantee that, we will wait to update. Please be patient, \nsupporting new versions is a lot of work.`,
-          color: 3066993,
-          image: {
-            url: "https://i.imgur.com/ErkdrOQ.png",
+      channel
+        .send({
+          embed: {
+            title: `**SERVER UPDATE TO 1.16**`,
+            description: `There is currently no estimated release date for 1.16.\nIn order to update, we have to wait for several factors outside of our control, such as updates to plugins and bug fixes. \n\n**The most important thing for us is that the server updates safely and smoothly.**\n\n Until/if we can guarantee that, we will wait to update. Please be patient, \nsupporting new versions is a lot of work.`,
+            color: 3066993,
+            image: {
+              url: "https://i.imgur.com/ErkdrOQ.png",
+            },
           },
-        },
-      })
-      .catch(console.error);
+        })
+        .catch(console.error);
+    } catch (error) {
+      console.error(error);
+    }
   }
 };
 
@@ -497,6 +502,25 @@ client.on("message", async (message) => {
           image: {
             url: "https://i.imgur.com/ErkdrOQ.png",
           },
+        },
+      })
+      .catch(console.error);
+  } else if (command == "seniormember") {
+    message.channel
+      .send({
+        embed: {
+          title: `**SENIOR MEMBER RANK**`,
+          fields: [
+            {
+              name: "RANK REQUIREMENTS AND PERKS",
+              value: `Senior member gives some perks but need some requirements which you can check below.\n${process.env.SM_RANK}`,
+            },
+            {
+              name: "RANK APPLICATION",
+              value: `You can check the format and apply for Senior Member on the link below, make sure to meet the requirements first.\n${process.env.SM_APP}`,
+            },
+          ],
+          color: 3066993,
         },
       })
       .catch(console.error);
