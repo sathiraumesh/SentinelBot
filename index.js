@@ -3,6 +3,7 @@ if (Number(process.version.slice(1).split(".")[0]) < 8)
     "Node 8.0.0 or higher is required. Update Node on your system."
   );
 
+//discord client
 const { Client } = require("discord.js");
 const Enmap = require("enmap");
 
@@ -40,6 +41,7 @@ client.admins = [
   staff.ninja5132.id,
   staff.Fjerreiro.id,
   staff.migas94.id,
+  staff.BrendaxNL.id,
 ];
 
 client.once("ready", () => {
@@ -83,11 +85,41 @@ client.once("ready", () => {
   });
 });
 
+const checkForContent = async (message) => {
+  const content = message.content.split(" ");
+  const group = ["when", "1.16", "update", "server", "nether", "updated"];
+
+  //intersect
+  const test = group.filter((value) => content.includes(value));
+
+  if (test.length >= 3) {
+    try {
+      const channel = await message.author.createDM();
+
+      channel
+        .send({
+          embed: {
+            title: `**SERVER UPDATE TO 1.16**`,
+            description: `There is currently no estimated release date for 1.16.\nIn order to update, we have to wait for several factors outside of our control, such as updates to plugins and bug fixes. \n\n**The most important thing for us is that the server updates safely and smoothly.**\n\n Until/if we can guarantee that, we will wait to update. Please be patient, \nsupporting new versions is a lot of work.`,
+            color: 3066993,
+            image: {
+              url: "https://i.imgur.com/ErkdrOQ.png",
+            },
+          },
+        })
+        .catch(console.error);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+};
+
 //MAIN LISTENER FOR ALL MESSAGES
 client.on("message", async (message) => {
+  if (message.author.bot) return;
+  checkForContent(message);
   if (
     !message.content.startsWith(process.env.PREFIX) ||
-    message.author.bot ||
     !process.env.CHANNEL_ID.includes(message.channel.id)
   )
     return;
@@ -469,9 +501,27 @@ client.on("message", async (message) => {
           description: `There is currently no estimated release date for 1.16.\nIn order to update, we have to wait for several factors outside of our control, such as updates to plugins and bug fixes. \n\n**The most important thing for us is that the server updates safely and smoothly.**\n\n Until/if we can guarantee that, we will wait to update. Please be patient, \nsupporting new versions is a lot of work.`,
           color: 3066993,
           image: {
-            url:
-              "https://i2-prod.dailystar.co.uk/incoming/article20326693.ece/ALTERNATES/s615/0_Minecraft.jpg",
+            url: "https://i.imgur.com/ErkdrOQ.png",
           },
+        },
+      })
+      .catch(console.error);
+  } else if (command == "seniormember") {
+    message.channel
+      .send({
+        embed: {
+          title: `**SENIOR MEMBER RANK**`,
+          fields: [
+            {
+              name: "RANK REQUIREMENTS AND PERKS",
+              value: `Senior member gives some perks but need some requirements which you can check below.\n${process.env.SM_RANK}`,
+            },
+            {
+              name: "RANK APPLICATION",
+              value: `You can check the format and apply for Senior Member on the link below, make sure to meet the requirements first.\n${process.env.SM_APP}`,
+            },
+          ],
+          color: 3066993,
         },
       })
       .catch(console.error);
