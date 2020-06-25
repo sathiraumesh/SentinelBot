@@ -4,7 +4,8 @@ if (Number(process.version.slice(1).split(".")[0]) < 8)
   );
 
 //discord client
-const { Client } = require("discord.js");
+const Discord = require("discord.js");
+
 const Enmap = require("enmap");
 
 const cron = require("node-cron");
@@ -25,7 +26,7 @@ Object.freeze(Server);
 const MESSAGE_CHAR_LIMIT = 2000;
 
 //DISCORD CLIENT
-const client = new Client();
+const client = new Discord.Client();
 client.settings = new Enmap();
 //OWN FILES
 const roles = require("./roles.json");
@@ -85,6 +86,14 @@ client.once("ready", () => {
   });
 });
 
+const UpdateEmbed = new Discord.MessageEmbed()
+  .setColor(3066993)
+  .setDescription(
+    `There is currently no estimated release date for 1.16.\nIn order to update, we have to wait for several factors outside of our control, such as updates to plugins and bug fixes. \n\n**The most important thing for us is that the server updates safely and smoothly.**\n\n Until/if we can guarantee that, we will wait to update. Please be patient, \nsupporting new versions is a lot of work.`
+  )
+  .setTitle(`**SERVER UPDATE TO 1.16**`)
+  .setImage("https://i.imgur.com/ErkdrOQ.png");
+
 const checkForContent = async (message) => {
   const content = message.content.split(" ");
   const group = ["when", "1.16", "update", "server", "nether", "updated"];
@@ -96,18 +105,7 @@ const checkForContent = async (message) => {
     try {
       const channel = await message.author.createDM();
 
-      channel
-        .send({
-          embed: {
-            title: `**SERVER UPDATE TO 1.16**`,
-            description: `There is currently no estimated release date for 1.16.\nIn order to update, we have to wait for several factors outside of our control, such as updates to plugins and bug fixes. \n\n**The most important thing for us is that the server updates safely and smoothly.**\n\n Until/if we can guarantee that, we will wait to update. Please be patient, \nsupporting new versions is a lot of work.`,
-            color: 3066993,
-            image: {
-              url: "https://i.imgur.com/ErkdrOQ.png",
-            },
-          },
-        })
-        .catch(console.error);
+      channel.send(UpdateEmbed).catch(console.error);
     } catch (error) {
       console.error(error);
     }
@@ -494,18 +492,7 @@ client.on("message", async (message) => {
       return message.channel.send("invalid amount of arguments");
     }
   } else if (command === "1.16" || command == "update") {
-    message.channel
-      .send({
-        embed: {
-          title: `**SERVER UPDATE TO 1.16**`,
-          description: `There is currently no estimated release date for 1.16.\nIn order to update, we have to wait for several factors outside of our control, such as updates to plugins and bug fixes. \n\n**The most important thing for us is that the server updates safely and smoothly.**\n\n Until/if we can guarantee that, we will wait to update. Please be patient, \nsupporting new versions is a lot of work.`,
-          color: 3066993,
-          image: {
-            url: "https://i.imgur.com/ErkdrOQ.png",
-          },
-        },
-      })
-      .catch(console.error);
+    message.channel.send(UpdateEmbed).catch(console.error);
   } else if (command == "seniormember") {
     message.channel
       .send({
