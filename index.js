@@ -2,7 +2,6 @@ if (Number(process.version.slice(1).split(".")[0]) < 8)
   throw new Error(
     "Node 8.0.0 or higher is required. Update Node on your system."
   );
-//test for gcloud build
 //discord client
 const { Client } = require("discord.js");
 const Enmap = require("enmap");
