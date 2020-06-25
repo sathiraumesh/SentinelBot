@@ -506,6 +506,25 @@ client.on("message", async (message) => {
         },
       })
       .catch(console.error);
+  } else if (command == "seniormember") {
+    message.channel
+      .send({
+        embed: {
+          title: `**SENIOR MEMBER RANK**`,
+          fields: [
+            {
+              name: "RANK REQUIREMENTS AND PERKS",
+              value: `Senior member gives some perks but need some requirements which you can check below.\n${process.env.SM_RANK}`,
+            },
+            {
+              name: "RANK APPLICATION",
+              value: `You can check the format and apply for Senior Member on the link below, make sure to meet the requirements first.\n${process.env.SM_APP}`,
+            },
+          ],
+          color: 3066993,
+        },
+      })
+      .catch(console.error);
   }
 });
 
