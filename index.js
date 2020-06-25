@@ -84,11 +84,37 @@ client.once("ready", () => {
   });
 });
 
+const checkForContent = async (message) => {
+  const content = message.content.split(" ");
+  const group = ["when", "1.16", "update", "server", "nether", "updated"];
+
+  //intersect
+  const test = group.filter((value) => content.includes(value));
+
+  if (test.length >= 3) {
+    const channel = await message.author.createDM();
+
+    channel
+      .send({
+        embed: {
+          title: `**SERVER UPDATE TO 1.16**`,
+          description: `There is currently no estimated release date for 1.16.\nIn order to update, we have to wait for several factors outside of our control, such as updates to plugins and bug fixes. \n\n**The most important thing for us is that the server updates safely and smoothly.**\n\n Until/if we can guarantee that, we will wait to update. Please be patient, \nsupporting new versions is a lot of work.`,
+          color: 3066993,
+          image: {
+            url: "https://i.imgur.com/ErkdrOQ.png",
+          },
+        },
+      })
+      .catch(console.error);
+  }
+};
+
 //MAIN LISTENER FOR ALL MESSAGES
 client.on("message", async (message) => {
+  if (message.author.bot) return;
+  checkForContent(message);
   if (
     !message.content.startsWith(process.env.PREFIX) ||
-    message.author.bot ||
     !process.env.CHANNEL_ID.includes(message.channel.id)
   )
     return;
@@ -470,8 +496,7 @@ client.on("message", async (message) => {
           description: `There is currently no estimated release date for 1.16.\nIn order to update, we have to wait for several factors outside of our control, such as updates to plugins and bug fixes. \n\n**The most important thing for us is that the server updates safely and smoothly.**\n\n Until/if we can guarantee that, we will wait to update. Please be patient, \nsupporting new versions is a lot of work.`,
           color: 3066993,
           image: {
-            url:
-              "https://i2-prod.dailystar.co.uk/incoming/article20326693.ece/ALTERNATES/s615/0_Minecraft.jpg",
+            url: "https://i.imgur.com/ErkdrOQ.png",
           },
         },
       })
