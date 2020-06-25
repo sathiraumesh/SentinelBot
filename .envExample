@@ -13,5 +13,6 @@ WELCOME_CHANNEL = 642770063027339266
 ID = 243035176689598464
 MC_SERVER = play.sentinelcraft.net
 MC_PORT = 25565
-SM = ""
+SM_RANK = "http://sentinelcraft.net/forum/index.php?topic=283.0"
+SM_APP = "http://sentinelcraft.net/forum/index.php?board=46.0"
 
