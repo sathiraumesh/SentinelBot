@@ -1,0 +1,17 @@
+CHANNEL_ID = [642770063027339266, 643377258710564864,658755701899919380]
+TOKEN = "FILL IN OWN TOKEN"
+PREFIX = !
+IP = "play.sentinelcraft.net"
+VOTE = "http://www.sentinelcraft.net/vote.php"
+MAP = "http://www.sentinelcraft.net/dynmap.php"
+DONATE = "http://www.sentinelcraft.net/donate.php"
+FORUM = "https://sentinelcraft.net/forum/index.php"
+RULES = "http://sentinelcraft.net/forum/index.php?topic=256.0"
+FORMAT_APPEAL="http://sentinelcraft.net/forum/index.php?topic=7.0"
+APPEAL = "http://sentinelcraft.net/forum/index.php?action=post;board=12.0"
+WELCOME_CHANNEL = 642770063027339266
+ID = 243035176689598464
+MC_SERVER = play.sentinelcraft.net
+MC_PORT = 25565
+SM = ""
+
