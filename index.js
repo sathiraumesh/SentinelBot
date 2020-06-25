@@ -41,6 +41,7 @@ client.admins = [
   staff.ninja5132.id,
   staff.Fjerreiro.id,
   staff.migas94.id,
+  staff.BrendaxNL.id,
 ];
 
 client.once("ready", () => {
