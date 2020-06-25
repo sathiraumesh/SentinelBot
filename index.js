@@ -461,6 +461,20 @@ client.on("message", async (message) => {
     } else {
       return message.channel.send("invalid amount of arguments");
     }
+  } else if (command === "1.16") {
+    message.channel
+      .send({
+        embed: {
+          title: `**SERVER UPDATE TO 1.16**`,
+          description: `There is currently no estimated release date for 1.16.\nIn order to update, we have to wait for several factors outside of our control, such as updates to plugins and bug fixes. \n\n**The most important thing for us is that the server updates safely and smoothly.**\n\n Until/if we can guarantee that, we will wait to update. Please be patient, \nsupporting new versions is a lot of work.`,
+          color: 3066993,
+          image: {
+            url:
+              "https://i2-prod.dailystar.co.uk/incoming/article20326693.ece/ALTERNATES/s615/0_Minecraft.jpg",
+          },
+        },
+      })
+      .catch(console.error);
   }
 });
 
