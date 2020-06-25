@@ -461,7 +461,7 @@ client.on("message", async (message) => {
     } else {
       return message.channel.send("invalid amount of arguments");
     }
-  } else if (command === "1.16") {
+  } else if (command === "1.16" || command == "update") {
     message.channel
       .send({
         embed: {
@@ -550,6 +550,8 @@ const commandarray = [
   "appeal",
   "userinfo",
   "invite",
+  "update",
+  "1.16",
 ];
 
 /**
