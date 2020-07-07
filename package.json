@@ -4,7 +4,7 @@
   "description": "A discord bot that pings the server, and provides more info",
   "main": "index.js",
   "engines": {
-    "node": ">=8.0.0"
+    "node": "12.x.x"
   },
   "scripts": {
     "start": "node index.js",

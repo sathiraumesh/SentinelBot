@@ -94,8 +94,18 @@ const UpdateEmbed = new Discord.MessageEmbed()
   .setImage("https://i.imgur.com/ErkdrOQ.png");
 
 const checkForContent = async (message) => {
-  const content = message.content.split(" ");
-  const group = ["when", "1.16", "update", "server", "nether", "updated"];
+  const content = message.content.toLowerCase().split(" ");
+  const group = [
+    "when",
+    "1.16",
+    "update",
+    "server",
+    "nether",
+    "updated",
+    "support",
+    "join",
+    "to",
+  ];
 
   //intersect
   const test = group.filter((value) => content.includes(value));
