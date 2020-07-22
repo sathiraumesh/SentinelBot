@@ -42,6 +42,7 @@ client.admins = [
   staff.Fjerreiro.id,
   staff.migas94.id,
   staff.BrendaxNL.id,
+  staff.Eagler1997.id, //for testing
 ];
 
 client.once("ready", () => {
@@ -85,13 +86,14 @@ client.once("ready", () => {
   });
 });
 
-const UpdateEmbed = new Discord.MessageEmbed()
-  .setColor(3066993)
-  .setDescription(
-    `There is currently no estimated release date for 1.16.\nIn order to update, we have to wait for several factors outside of our control, such as updates to plugins and bug fixes. \n\n**The most important thing for us is that the server updates safely and smoothly.**\n\n Until/if we can guarantee that, we will wait to update. Please be patient, \nsupporting new versions is a lot of work.`
-  )
-  .setTitle(`**SERVER UPDATE TO 1.16**`)
-  .setImage("https://i.imgur.com/ErkdrOQ.png");
+const UpdateEmbed = {
+  color: 3066993,
+  title: `**SERVER UPDATE TO 1.16**`,
+  description: `There is currently no estimated release date for 1.16.\nIn order to update, we have to wait for several factors outside of our control, such as updates to plugins and bug fixes. \n\n**The most important thing for us is that the server updates safely and smoothly.**\n\n Until/if we can guarantee that, we will wait to update. Please be patient, \nsupporting new versions is a lot of work.`,
+  image: {
+    url: "https://i.imgur.com/ErkdrOQ.png",
+  },
+};
 
 const checkForContent = async (message) => {
   const content = message.content.toLowerCase().split(" ");
@@ -114,7 +116,7 @@ const checkForContent = async (message) => {
     try {
       const channel = await message.author.createDM();
 
-      channel.send(UpdateEmbed).catch(console.error);
+      channel.send({ embed: UpdateEmbed }).catch(console.error);
     } catch (error) {
       console.error(error);
     }
@@ -358,7 +360,7 @@ client.on("message", async (message) => {
   } else if (command == "userinfo") {
     let user = message.mentions.members.first();
     if (!message.mentions.members.first()) {
-      user = message.guild.members.find(
+      user = message.guild.members.cache.find(
         (u) =>
           u.displayName == args.join(" ") ||
           u.tag == args.join(" ") ||
@@ -373,7 +375,7 @@ client.on("message", async (message) => {
     const joineddays = getDays(Date.now(), new Date(user.joinedAt));
     const createddays = getDays(Date.now(), new Date(user.user.createdAt));
 
-    var roles = user.roles
+    var roles = user.roles.cache
       .filter((role) => role.id !== message.channel.guild.id)
       .map((r) => `${r.name}`)
       .join(` - `);
@@ -384,7 +386,7 @@ client.on("message", async (message) => {
       nickname = user.displayName;
     }
 
-    const sortedmembers = message.guild.members.sort(
+    const sortedmembers = message.guild.members.cache.sort(
       (a, b) => a.joinedAt - b.joinedAt
     );
 
@@ -501,7 +503,7 @@ client.on("message", async (message) => {
       return message.channel.send("invalid amount of arguments");
     }
   } else if (command === "1.16" || command == "update") {
-    message.channel.send(UpdateEmbed).catch(console.error);
+    message.channel.send({ embed: UpdateEmbed }).catch(console.error);
   } else if (command == "seniormember") {
     message.channel
       .send({
@@ -762,9 +764,13 @@ const alertStaff = (message) => {
     return console.info(
       `DID NOT ALERT STAFF AT ${new Date()} because pings were turned off`
     );
-  let Sentinel = client.guilds.find((guild) => guild.id == process.env.ID);
+  if (!client) return console.error("FATAL ERROR, CLIENT IS NOT DEFINED");
+  if (!client.guilds) return console.error("no client.guilds");
+  let Sentinel = client.guilds.cache.find(
+    (guild) => guild.id == process.env.ID
+  );
   if (!Sentinel) return console.error("Did not find any guilds");
-  let SA = Sentinel.members.filter((m) => client.admins.includes(m.id));
+  let SA = Sentinel.members.cache.filter((m) => client.admins.includes(m.id));
   if (!SA) return console.error("Did not find any staff");
   let onlinestaff = [
     ...new Set(
