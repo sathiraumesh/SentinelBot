@@ -600,6 +600,7 @@ const commandarray = [
   "invite",
   "update",
   "1.16",
+  "seniormember",
 ];
 
 /**
