@@ -15,4 +15,6 @@ MC_SERVER = play.sentinelcraft.net
 MC_PORT = 25565
 SM_RANK = "http://sentinelcraft.net/forum/index.php?topic=283.0"
 SM_APP = "http://sentinelcraft.net/forum/index.php?board=46.0"
+APPLICATION_CHANNEL=642770062557708359
+
 
