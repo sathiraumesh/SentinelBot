@@ -16,7 +16,7 @@ const fs = require("fs");
 
 require("dotenv").config();
 
-var HOST = process.env.MC_SERVER || "play.sentinelcraft.net";
+var HOST = "play.sentinelcraft.net";
 var PORT = process.env.MC_PORT || 25565;
 
 const query = new Query(HOST, PORT, { timeout: 30000 });
@@ -31,6 +31,7 @@ client.settings = new Enmap();
 const roles = require("./roles.json");
 const staff = require("./staff.json");
 const rules = require("./rules.json");
+const votes = require("./votes.json");
 
 client.settings.disableping = false;
 //ALL ADMINS OF THE BOT, THESE PEOPLE HAVE FULL ACCESS TO ALL COMMANDS
@@ -42,7 +43,7 @@ client.admins = [
   staff.Fjerreiro.id,
   staff.migas94.id,
   staff.BrendaxNL.id,
-  staff.Eagler1997.id, //for testing
+  staff.Eagler1997.id,
 ];
 
 client.once("ready", () => {
@@ -126,14 +127,13 @@ const checkForContent = async (message) => {
 //MAIN LISTENER FOR ALL MESSAGES
 client.on("message", async (message) => {
   if (message.author.bot) return;
-  checkForContent(message);
+  //checkForContent(message); AUTOREPLY FOR 1.16.2 UPDATE IS NOW DISABLED
   if (
     !message.content.startsWith(process.env.PREFIX) ||
     !process.env.CHANNEL_ID.includes(message.channel.id)
   )
     return;
   const content = message.content.slice(process.env.PREFIX.length).split(/ +/);
-  console.log(content);
   const command = content.shift().toLowerCase();
 
   const args = content;
@@ -220,6 +220,38 @@ client.on("message", async (message) => {
               console.error(e);
           });
       });
+  } else if (command == "app" && client.admins.includes(message.author.id)) {
+    if (args.length > 1) {
+      if (["remove", "delete"].includes(args[0].toLowerCase())) {
+        if (votes.hasOwnProperty(args[1])) {
+          delete votes[args[1]];
+          saveVotes();
+          message.channel.send(`Removed the application for **${args[1]}**`);
+        } else {
+          message.channel.send(
+            `No application found for **${args[1]}**\n**Failed to delete**`
+          );
+        }
+      } else {
+        registerApplication(message, args);
+      }
+    } else {
+      if (votes.hasOwnProperty(args[0])) {
+        message.channel.send(
+          `**ALL VOTES FOR ${args[0]}**\n- ${Object.entries(votes[args[0]])
+            .map((e) => `${e[0]}: ${e[1]}`)
+            .join("\n- ")}`
+        );
+      } else {
+        message.channel.send(
+          `**No applications found for ${
+            args[0]
+          }!**\nPick a value from the following list: \n- ${Object.keys(
+            votes
+          ).join("\n- ")}`
+        );
+      }
+    }
   } else if (command == "help") {
     message.channel
       .send({
@@ -438,21 +470,31 @@ client.on("message", async (message) => {
       return message.channel.send({
         embed: {
           title: `**PING**`,
-          description: `Pinging of staff is currently ${
-            client.settings.disableping ? "**off**" : "**on**"
+          description: `Pinging of ${message.author} is currently ${
+            Object.entries(staff).find(
+              (el) => el[1].id === message.author.id
+            )[1].ping
+              ? "**on**"
+              : "**off**"
           }`,
           color: 3066993,
         },
       });
     const suffix = args.toString() === "off";
-    //changing the setting
-    client.settings.disableping = suffix ? true : false;
 
+    staff[
+      Object.entries(staff).find((el) => el[1].id === message.author.id)[0]
+    ].ping = suffix ? false : true;
+
+    saveStaff(message);
     message.channel.send({
       embed: {
         title: `**PING**`,
-        description: `Changed pinging of staff to ${
-          client.settings.disableping ? "**off**" : "**on**"
+        description: `Changed pinging of ${message.author} to ${
+          Object.entries(staff).find((el) => el[1].id === message.author.id)[1]
+            .ping
+            ? "**on**"
+            : "**off**"
         } do **!ping ${suffix ? "on" : "off"}** to ${
           suffix ? "enable" : "disable"
         } it`,
@@ -468,6 +510,12 @@ client.on("message", async (message) => {
       message.member || message.guild.fetchMember(message.author)
     );
     message.channel.send("I added a fake join");
+  } else if (
+    command === "fakealert" &&
+    client.admins.includes(message.author.id)
+  ) {
+    alertStaff(message);
+    message.channel.send("fake alerted");
   } else if (command === "invite") {
     message.channel
       .createInvite({
@@ -502,8 +550,8 @@ client.on("message", async (message) => {
     } else {
       return message.channel.send("invalid amount of arguments");
     }
-  } else if (command === "1.16" || command == "update") {
-    message.channel.send({ embed: UpdateEmbed }).catch(console.error);
+    //} else if (command === "1.16" || command == "update") {
+    //message.channel.send({ embed: UpdateEmbed }).catch(console.error);
   } else if (command == "seniormember") {
     message.channel
       .send({
@@ -536,7 +584,7 @@ const getDays = (dt1, dt2) => {
 };
 
 client.on("guildMemberAdd", async (member) => {
-  const welcomechannel = member.guild.channels.find(
+  const welcomechannel = member.guild.channels.cache.find(
     (c) => c.id == process.env.WELCOME_CHANNEL
   );
   if (!welcomechannel) return;
@@ -552,7 +600,8 @@ client.on("guildMemberAdd", async (member) => {
           {
             name: "Membercount",
             value: `${member.guild.name} has ${
-              member.guild.members.filter((member) => !member.user.bot).size
+              member.guild.members.cache.filter((member) => !member.user.bot)
+                .size
             } members`,
           },
           {
@@ -578,9 +627,16 @@ client.login(process.env.TOKEN);
 //HELPER FUNCTIONS
 
 const assignBasicRole = (member) => {
-  member
-    .addRole(roles.Member.id)
-    .catch(() => console.error(`Failed to assign role : ${roles.Member.id}`));
+  try {
+    member.roles
+      .add(roles.Member.id, "New player joined")
+      .then(console.log(`Added role ${roles.Member.id}`))
+      .catch((err) =>
+        console.error(`Failed to assign role : ${roles.Member.id}\n${err}`)
+      );
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 //ADD TRIGGERS FOR THE BOT HERE AS STRINGS, IT WILL REPLY TO THESE WITH THE PLAYERLIST COMMAND
@@ -599,7 +655,6 @@ const commandarray = [
   "userinfo",
   "invite",
   "update",
-  "1.16",
   "seniormember",
 ];
 
@@ -742,15 +797,22 @@ const promote = (target, role, msg) => {
     staff[target] = { rank: role };
   }
 
-  saveStaff();
+  saveStaff(msg);
   msg.channel.send(`Updated ${target}'s role to ${role} in the JSON.`);
 };
 
-const saveStaff = () => {
+const saveStaff = (msg) => {
   let data = JSON.stringify(staff, null, 2);
+
   fs.writeFile("staff.json", data, (err) => {
     if (err) throw err;
     console.log("Data written to file");
+
+    const file = fs.readFileSync("staff.json");
+
+    const attachment = new Discord.MessageAttachment(file, "staff.json");
+
+    msg.channel.send({ files: [attachment] }).catch(console.error);
   });
 };
 
@@ -761,17 +823,21 @@ const saveStaff = () => {
  */
 const alertStaff = (message) => {
   console.log("ALERTSTAFF");
-  if (client.settings.disableping)
-    return console.info(
-      `DID NOT ALERT STAFF AT ${new Date()} because pings were turned off`
-    );
+
   if (!client) return console.error("FATAL ERROR, CLIENT IS NOT DEFINED");
   if (!client.guilds) return console.error("no client.guilds");
   let Sentinel = client.guilds.cache.find(
     (guild) => guild.id == process.env.ID
   );
   if (!Sentinel) return console.error("Did not find any guilds");
-  let SA = Sentinel.members.cache.filter((m) => client.admins.includes(m.id));
+
+  let pingableStaff = Object.entries(staff)
+    .filter((s) => client.admins.includes(s[1].id) && s[1].ping === true)
+    .map((el) => el[1].id);
+  console.log("PINGABLESTAFF", pingableStaff);
+  let SA = Sentinel.members.cache.filter((m) => pingableStaff.includes(m.id));
+  console.log("SA", SA);
+
   if (!SA) return console.error("Did not find any staff");
   let onlinestaff = [
     ...new Set(
@@ -780,6 +846,7 @@ const alertStaff = (message) => {
       )
     ),
   ];
+
   onlinestaff.forEach((element) => {
     element[1]
       .send(`**${message}**\n ${onlinestaff.map((el) => el[1]).join("\n")}`)
@@ -856,3 +923,98 @@ var SetState = new Proxy(state, {
     return true;
   },
 });
+
+const registerApplication = (message, args) => {
+  if (votes.hasOwnProperty(args[0])) {
+    //ALREADY EXISTS IGNORE THE VOTE OR RETURN AN ERROR
+    message.channel.send(
+      `**That application already exists!**\nUse: \`!app remove ${args[0]}\` to remove the application if you want to register a new one`
+    );
+  } else {
+    votes[args[0]] = {};
+    saveVotes();
+    message.channel.send(
+      `Registered a new application for **${args[0]}**\n**Admin+** will now be informed of this application and they can vote`
+    );
+    sendMessageToAdmins(message, args);
+  }
+};
+
+const sendMessageToAdmins = (message, args) => {
+  //ARRAY OF ID'S OF ADMINS
+  if (!client) return console.error("FATAL ERROR, CLIENT IS NOT DEFINED");
+  if (!client.guilds) return console.error("no client.guilds");
+  let Sentinel = client.guilds.cache.find(
+    (guild) => guild.id == process.env.ID
+  );
+  if (!Sentinel) return console.error("Did not find any guilds");
+
+  let pingableStaff = Object.entries(staff)
+    .filter((s) => ["Admin", "SA", "Owner"].includes(s[1].rank)) //LIST OF RANKS TO CONTACT
+    .map((el) => el[1].id);
+  let Admins = Sentinel.members.cache.filter((m) =>
+    pingableStaff.includes(m.id)
+  );
+  Admins.forEach((element) => {
+    element
+      .send(
+        `Open application for **${args[0]}**\n**Please reply with:**\n\`Yes ${args[0]} reason to approve\`\n**OR**\n\`No ${args[0]} reason to deny\`\n**Application URL:**\n${args[1]}`
+      )
+      .then((msg) => {
+        let collector = new Discord.MessageCollector(
+          msg.channel, //CHANNEL
+          (m) =>
+            m.author.id === message.author.id && m.content.includes(args[0]) //FILTER
+        );
+        collector.on("collect", (message) => {
+          console.log(message.content);
+
+          if (
+            ["yes", "no"].includes(
+              message.content.substring(0, 3).replace(/\s/g, "").toLowerCase()
+            )
+          ) {
+            message.channel.send(`Thank you for voting on the application of **${args[0]}**!`)
+            votes[args[0]][message.author.username] = message.content;
+            saveVotes();
+            forwardMessage(message, message.content.substring(3), args[0]);
+            collector.stop();
+          }
+        });
+
+        collector.on("end", (collected, reason) => {
+          console.log(`collector has ended ${reason}`);
+        });
+      })
+      .catch((e) => console.error);
+  });
+};
+
+const forwardMessage = (message, reason, name) => {
+  if (!client) return console.error("FATAL ERROR, CLIENT IS NOT DEFINED");
+  if (!client.guilds) return console.error("no client.guilds");
+  let Sentinel = client.guilds.cache.find(
+    (guild) => guild.id == process.env.ID
+  );
+  if (!Sentinel) return console.error("Did not find any guilds");
+
+  const applicationChannel = Sentinel.channels.cache.find(
+    (c) => c.id == process.env.APPLICATION_CHANNEL
+  );
+
+  applicationChannel.send(
+    `${message.author} has voted **${message.content.substring(
+      0,
+      3
+    )}** for **${name}**\n **REASON** \n${reason.trim().substring(name.length)}`
+  );
+};
+
+const saveVotes = () => {
+  let data = JSON.stringify(votes, null, 2);
+
+  fs.writeFile("votes.json", data, (err) => {
+    if (err) throw err;
+    console.log("Data written to file");
+  });
+};
