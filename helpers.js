@@ -14,16 +14,33 @@ Object.freeze(Server);
 
 const MESSAGE_CHAR_LIMIT = 2000;
 
+/**
+ * Description (function to assign roles ).
+ * @global
+ * @augments Object
+ * @param {Object} date First date
+ */
 const assignBasicRole = (member) => {
   member
     .addRole(roles.Member.id)
     .catch(() => console.error(`Failed to assign role : ${roles.Member.id}`));
 };
 
-//ADD TRIGGERS FOR THE BOT HERE AS STRINGS, IT WILL REPLY TO THESE WITH THE PLAYERLIST
+
+/**
+ * Description  Variable to store the triggers types for the bot. It Will reply to these with playlist command
+ * @global
+ * @param {Array} triggers array of triggers for the bot
+ * Add all the trigers to the array in string format
+ */
 const triggers = ["players", "list", "online", "status", "who"];
 
-//ADD ALL OTHER COMMANDS HERE, THEY WILL BE MERGED TO 1 LIST
+/**
+ * Description  Variable that holds the commands 
+ * @global
+ * @param {Array} commandarray array of commands 
+ * Add all the commands in the string format 
+ */
 const commandarray = [
   ...triggers,
   "ip",
@@ -112,6 +129,11 @@ const splitString = (string, prepend = `\`\`\`ini\n`, append = `\`\`\``) => {
   ];
 };
 
+/**
+ * Description (function returns the last index of  array ).
+ * @global
+ * @param {Number} date First date
+ */
 Array.prototype.last = function () {
   return this[this.length - 1];
 };
@@ -249,7 +271,12 @@ const GetPlayers = () => {
   });
 };
 
-//EVENT HANDLER WHEN SERVERSTATE CHANGES
+/**
+ * Description (Event handler which handles the events when the state of the serve changes).
+ * @global
+ * @return {Object}
+ */
+
 var SetState = new Proxy(state, {
   set: function (target, key, value) {
     if (target[key] == value) return;
