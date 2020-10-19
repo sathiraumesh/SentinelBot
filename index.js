@@ -639,10 +639,22 @@ const assignBasicRole = (member) => {
   }
 };
 
-//ADD TRIGGERS FOR THE BOT HERE AS STRINGS, IT WILL REPLY TO THESE WITH THE PLAYERLIST COMMAND
+
+/**
+ * Description  Variable to store the triggers types for the bot. It Will reply to these with playlist command
+ * @global
+ * @param {Array} triggers array of triggers for the bot
+ * Add all the trigers to the array in string format
+ */
 const triggers = ["players", "list", "online", "status", "who"];
 
-//ADD ALL OTHER COMMANDS HERE, THEY WILL BE MERGED TO 1 LIST AND APPEAR IN THE HELP
+
+/**
+ * Description  Variable that holds the commands 
+ * @global
+ * @param {Array} commandarray array of commands 
+ * Add all the commands in the string format 
+ */
 const commandarray = [
   ...triggers,
   "ip",
@@ -736,6 +748,12 @@ const splitString = (string, prepend = `\`\`\`ini\n`, append = `\`\`\``) => {
   ];
 };
 
+/**
+ * Description (function returns the last index of  array ).
+ * @global
+ * @param {Number} date First date
+ */
+
 Array.prototype.last = function () {
   return this[this.length - 1];
 };
@@ -790,6 +808,13 @@ const ping = async () => {
   });
 };
 
+/**
+ * Description (function that promotes staff members by role).
+ * @global
+ * @param {Object} target target conatins the staff persons object
+ * @param {String} role role contains the role of the staff person
+ * @param {Object} msg msg object contains the msg content of promote function
+ */
 const promote = (target, role, msg) => {
   if (staff[target]) {
     staff[target].rank = role;
@@ -801,6 +826,11 @@ const promote = (target, role, msg) => {
   msg.channel.send(`Updated ${target}'s role to ${role} in the JSON.`);
 };
 
+/**
+ * Description (function that saves the staff to a file in josn format).
+ * @global
+ * @param {Object} msg Message object  caontains content of the message
+ */
 const saveStaff = (msg) => {
   let data = JSON.stringify(staff, null, 2);
 
@@ -905,7 +935,12 @@ const GetPlayers = () => {
   });
 };
 
-//EVENT HANDLER WHEN SERVERSTATE CHANGES
+/**
+ * Description (Event handler which handles the events when the state of the serve changes).
+ * @global
+ * @return {Object}
+ */
+
 var SetState = new Proxy(state, {
   set: function (target, key, value) {
     if (target[key] == value) return;
@@ -924,6 +959,12 @@ var SetState = new Proxy(state, {
   },
 });
 
+/**
+ * Description (function that registers applications for voting).
+ * @global
+ * @param {Object} message Message the hold the conents of the message
+ * @param {Array} args An array having set of arguments for sending the message
+ */
 const registerApplication = (message, args) => {
   if (votes.hasOwnProperty(args[0])) {
     //ALREADY EXISTS IGNORE THE VOTE OR RETURN AN ERROR
@@ -939,6 +980,13 @@ const registerApplication = (message, args) => {
     sendMessageToAdmins(message, args);
   }
 };
+
+/**
+ * Description (function that sends messages to the admins).
+ * @global
+ * @param {Object} message Message the hold the conents of the message
+ * @param {Array} args An array having set of arguments for sending the message
+ */
 
 const sendMessageToAdmins = (message, args) => {
   //ARRAY OF ID'S OF ADMINS
@@ -990,6 +1038,13 @@ const sendMessageToAdmins = (message, args) => {
   });
 };
 
+/**
+ * Description (function that will forward a message the voted message).
+ * @global
+ * @param {Object} message Message the hold the conents of the message
+ * @param {String} reason reason for voting 
+ * @param {name} name name of the voted person
+ */
 const forwardMessage = (message, reason, name) => {
   if (!client) return console.error("FATAL ERROR, CLIENT IS NOT DEFINED");
   if (!client.guilds) return console.error("no client.guilds");
@@ -1010,6 +1065,10 @@ const forwardMessage = (message, reason, name) => {
   );
 };
 
+/**
+ * Description (function that saves the votes data to a file in the server ).
+ * @global
+ */
 const saveVotes = () => {
   let data = JSON.stringify(votes, null, 2);
 
